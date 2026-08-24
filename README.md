@@ -17,8 +17,6 @@ It behaves as a small interactive system with:
 - Turn-based interaction
 - History tracking
 
-All behavior is realized within TeX macro expansion rules.
-
 ---
 
 ## Features
