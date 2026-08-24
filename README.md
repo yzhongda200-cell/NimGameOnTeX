@@ -2,13 +2,9 @@
 
 This project is under active development.
 
-A Nim game engine implemented entirely in TeX macro expansion system.
-
 ---
 
 ## Overview
-
-NimOnTeX is a fully TeX-based implementation of the game Nim.
 
 It behaves as a small interactive system with:
 
