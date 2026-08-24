@@ -1,148 +1,473 @@
 \input{nimsum.tex}
 \input{ifcompare.tex}
-\catcode`\@=11
+\input{numadd.tex}
+\makeatletter
 \def\texnim{%
 	\begingroup%
-		\texnim@title%
-		\catcode`\ =9
-		\@ifnextchar(
-			{\@texnim}
-			{\texnim@mode}%
+	\catcode32=9\relax%
+	\catcode13=9\relax%
+	\@ifnextchar[{\texnim@option}{\@ifnextchar({\@texnim}{\texnim@mode}}%
 }
 \def\texnim@title{%
-	\begin{center}
-		\huge Nim on \TeX
-	\end{center}
+	\texnim@ifundefined{texnim@title@flag}
+		{\begin{center}\huge Nim on \TeX\end{center}\smallskip\smallskip}
+		{\par\noindent}%
+}
+\long\def\texnim@option[#1]{%
+	\texnim@ifmt{#1}
+		{\@texnim}
+		{\@texnim@option#1,\texnim@relax%
+			\@ifnextchar({\@texnim}{\texnim@mode}}%
+}
+\def\@texnim@option#1,#2\texnim@relax{%
+	\texnim@ifmt{#2}
+		{\texnim@ifmt{#1}
+			{\texnim@optionerror{2}}
+			{\@texnim@option@a#1=\texnim@relax}}
+		{\texnim@ifmt{#1}
+			{\texnim@optionerror{2}}
+			{\@texnim@option@a#1=\texnim@relax
+				\texnim@ifundefined{texnim@option@error@flag}
+					{\@texnim@option#2\texnim@relax}
+					{}}}%
+}
+\def\@texnim@option@a#1=#2\texnim@relax{%
+	\texnim@ifmt{#2}
+		{\texnim@optionerror{1}}
+		{\texnim@ifmt{#1}
+			{\texnim@optionerror{1}}
+			{\@texnim@option@b{#1}#2\texnim@relax}}%
+}
+\def\@texnim@option@b#1#2=#3\texnim@relax{%
+	\texnim@ifmt{#3}
+		{\texnim@ifmt{#2}
+			{\texnim@optionerror{1}}
+			{\texnim@ifundefined{texnim@option@\string#1@exists}
+				{\texnim@optionerror{0}}
+				{\texnim@ifundefined{texnim@\string#1@exists@flag}
+					{\expandafter\def\csname texnim@\string#1@exists@flag\endcsname{#2}%
+						\csname texnim@option@\string#1@exists\endcsname{#2}}
+					{\texnim@optionerror{4}}}}}
+		{\texnim@optionerror{3}}%
 }
 \def\texnim@mode#1{%
-	\expandafter\texnim@ifx\expandafter{\csname texnim@mode@\expandafter\@gobble\string#1\endcsname}{\relax}
+	\texnim@ifundefined{texnim@mode@\expandafter\@gobble\string#1@exists}
 		{\texnim@modeerror}
-		{\csname texnim@mode@\expandafter\@gobble\string#1\endcsname}%
+		{\csname texnim@mode@\expandafter\@gobble\string#1@exists\endcsname}%
 }
 \long\def\@texnim(#1){%
-	\catcode`\ =10
-	\expandafter\ifx\csname texnim@history@A\endcsname\relax \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
-		{\texnim@check@b#1,\texnim@relax{<=}
+	\catcode32=10\relax%
+	\texnim@option@check%
+	{\texnim@title%
+		\texnim@ifundefined{texnim@history@A}
+			{\texnim@check@error#1,\texnim@relax
+				{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@turn{A}}%
+					\texnim@ifundefined{texnim@consecutivewait@flag}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}}%
+					\texnim@ifundefined{texnim@currentwait}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+					\texnim@next{#1}%
+					\texnim@ifundefined{texnim@lastposition}
+						{}
+						{\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter{%
+							\expandafter\expandafter\expandafter\gdef\expandafter\expandafter\expandafter\texnim@history@A\expandafter\expandafter\expandafter{%
+							\expandafter\texnim@history@tex\expandafter{%
+							\texnim@lastposition}{#1}}}}}%
+					\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}}
+			{\texnim@check{#1}
+				{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+					\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+					\texnim@ifundefined{texnim@consecutivewait@flag}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait}}}%
+					\texnim@ifundefined{texnim@currentwait}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+					\texnim@history%
+					$\hbox{You}\,\colon (\texnim@lastposition) \,\, \to~(#1)$\\%
+					\expandafter\expandafter\expandafter\def\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\expandafter\expandafter{\expandafter\texnim@history@you\expandafter{\texnim@lastposition}{(#1)}}%
+					\texnim@next{#1}%
+					\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\def\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\texnim@history@tex\expandafter{\texnim@lastposition}{#1}}%
+					\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\gdef\expandafter\texnim@history@input\expandafter{\texnim@history@temp}{\csname texnim@history@\texnim@turn\endcsname}}}%
+					\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}
+				{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+					\texnim@ifundefined{texnim@consecutivewait@flag}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait}}}%
+					\texnim@ifundefined{texnim@currentwait}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+					\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+					\texnim@history%
+					\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
+					\expandafter\texnim@check@terminal\texnim@lastposition,\texnim@relax
+						{\\$\hbox{\TeX}\colon\hbox{You lose.}$}
+						{\\$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\\expandafter\texnim@errortext\expandafter{\texnim@errorvalue}}}}}%
+	\endgroup%
+}
+\def\texnim@mode@reset@exists{%
+	\catcode32=10\relax%
+	\texnim@title%
+	$\hbox{\TeX}\colon\hbox{Type a position.}$\\%
+	\endgroup%
+}
+\def\texnim@mode@title@exists{%
+	\catcode32=10\relax%
+	\texnim@title%
+	\endgroup%
+}
+\def\texnim@mode@relax@exists{%
+	\catcode32=10\relax%
+	\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+	\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+	\texnim@ifundefined{texnim@consecutivewait@flag}
+		{}
+		{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}}%
+	\texnim@ifundefined{texnim@currentwait}
+		{}
+		{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+			\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+	\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+	\texnim@history@record%
+	\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
+	\endgroup\relax%
+}
+\long\def\texnim@mode@restartfrom@exists(#1){%
+	\catcode32=10\relax%
+	\texnim@ifundefined{texnim@option@error@flag}
+		{\texnim@ifundefined{texnim@maxwait@error@flag}
+			{\texnim@ifundefined{texnim@consecutivewait@error@flag}
+				{}
+				{\texnim@consecutivewait@error\@gobble}}
+			{\texnim@maxwait@error\@gobble}}
+		{\@gobble}%
+	{\texnim@title%
+		\texnim@check@error#1,\texnim@relax
 			{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+				\texnim@ifundefined{texnim@consecutivewait@flag}
+					{}
+					{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}}%
+				\texnim@ifundefined{texnim@maxwait@exists@flag}
+					{}
+					{\relax\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@maxwait@flag}}%
+						\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@maxwait@flag}}}%
 				\immediate\write\@auxout{\string\gdef\string\texnim@turn{A}}%
 				\texnim@next{#1}%
-				\expandafter\ifx\csname texnim@lastposition\endcsname\relax \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
+				\texnim@ifundefined{texnim@lastposition}
 					{}
 					{\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter{%
 						\expandafter\expandafter\expandafter\gdef\expandafter\expandafter\expandafter\texnim@history@A\expandafter\expandafter\expandafter{%
 						\expandafter\texnim@history@tex\expandafter{%
 						\texnim@lastposition}{#1}}}}}%
-				\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}
-			{\texnim@errortext}}
-		{\texnim@check{#1}
-			{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
-				\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
-				\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
-				\texnim@history%
-				$\hbox{You}\,\colon (\texnim@lastposition) \,\, \to~(#1)$\\%
-				\expandafter\expandafter\expandafter\def\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\expandafter\expandafter{\expandafter\texnim@history@you\expandafter{\texnim@lastposition}{(#1)}}%
-				\texnim@next{#1}%
-				\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\def\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\texnim@history@temp\expandafter\texnim@history@tex\expandafter{\texnim@lastposition}{#1}}%
-				\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\gdef\expandafter\texnim@history@input\expandafter{\texnim@history@temp}{\csname texnim@history@\texnim@turn\endcsname}}}%
-				\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}
-			{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
-				\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
-				\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
-				\edef\texnim@turn{\texnim@turn A}%
-				\texnim@history%
-				\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
-				\expandafter\texnim@check@b\texnim@lastposition,\texnim@relax{=}
-					{\\$\hbox{\TeX}\colon\hbox{You lose.}$}
-					{\\$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\\texnim@errortext}}}%
-	\endgroup%
+				\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}}%
+		\endgroup%
 }
-\def\texnim@mode@reset{%
-	$\hbox{\TeX}\colon\hbox{Give me a Nim position.}$%
-	\endgroup%
-}
-\def\texnim@mode@relax{%
-	\endgroup\relax%
-}
-\def\texnim@mode@restart(#1){%
-	\catcode`\ =10
-	\texnim@check@b#1,\texnim@relax{<=}
-		{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
-			\immediate\write\@auxout{\string\gdef\string\texnim@turn{A}}%
-			\texnim@next{#1}%
-			\expandafter\ifx\csname texnim@lastposition\endcsname\relax \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
-				{}
-				{\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter{%
-					\expandafter\expandafter\expandafter\gdef\expandafter\expandafter\expandafter\texnim@history@A\expandafter\expandafter\expandafter{%
-					\expandafter\texnim@history@tex\expandafter{%
-					\texnim@lastposition}{#1}}}}}%
-			\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}
-		{\texnim@errortext}%
-	\endgroup%
-}
-\def\texnim@mode@wait{%
-	\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
-	\immediate\write\@auxout{\string\gdef\string\texnim@turn{\expandafter\@gobble\texnim@turn}}%
-	\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname}}%
-	\texnim@history%
-	\csname texnim@history@\texnim@turn\endcsname\\%
-	\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
-	$\hbox{You}\,\colon\hbox{Wait.}$\\%
-	$\hbox{\TeX}\colon\hbox{OK...}$\\\\%
-	\expandafter\expandafter\expandafter\texnim@mode@wait@b\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname\texnim@relax%
-	$\hbox{You}\,\colon(\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname)\,\,\to~\hbox{?}$%
+\def\texnim@mode@wait@exists{%
+	\catcode32=10\relax%
+	\texnim@option@check%
+	{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+		\texnim@title%
+		\texnim@ifundefined{texnim@currentwait}
+			{\texnim@ifundefined{texnim@history@A}
+				{$\hbox{\TeX}\colon\hbox{OK.}$}
+				{\expandafter\expandafter\expandafter\texnim@ifmt\expandafter\expandafter\expandafter{\expandafter\@gobble\texnim@turn}
+					{$\hbox{\TeX}\colon\hbox{Type a position.}$\\}
+					{\texnim@ifundefined{texnim@consecutivewait@wait}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@turn{\expandafter\@gobble\texnim@turn}}%
+							\texnim@ifundefined{texnim@consecutivewait@flag}
+								{}
+								{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}%
+									\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait@wait{A}}}%
+							\texnim@ifundefined{texnim@currentwait}
+								{}
+								{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+									\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname}}%
+							\texnim@history%
+							\csname texnim@history@\texnim@turn\endcsname\\%
+							$\hbox{You}\,\colon\hbox{Wait.}$\\%
+							$\hbox{\TeX}\colon\hbox{OK...}$\\\\%
+							\expandafter\expandafter\expandafter\texnim@mode@wait@b\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname\texnim@relax%
+							$\hbox{You}\,\colon(\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname)\,\,\to~\hbox{?}$\\}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+							\texnim@ifundefined{texnim@consecutivewait@flag}
+								{}
+								{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}%
+									\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait@wait{A}}}%
+							\texnim@ifundefined{texnim@currentwait}
+								{}
+								{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+									\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+							\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+							\texnim@history%
+							\csname texnim@history@\texnim@turn\endcsname\\%
+							$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\%
+							! Consecutive waits are not allowed.\\%
+							$\hbox{\TeX}\colon\hbox{Input a move.}$\\}}}}
+			{\expandafter\ifcompare\expandafter[\texnim@currentwait]=[0]
+				{\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+					\texnim@ifundefined{texnim@consecutivewait@flag}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}}%
+					\texnim@ifundefined{texnim@currentwait}
+						{}
+						{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+							\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+					\texnim@history%
+					\csname texnim@history@\texnim@turn\endcsname\\%
+					$\hbox{You}\,\colon\hbox{Wait.}$\\%
+					$\hbox{\TeX}\colon\hbox{NO.}$\\\\%
+					$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\}
+				{\texnim@ifundefined{texnim@consecutivewait@wait}
+					{\texnim@ifundefined{texnim@consecutivewait@flag}
+							{}
+							{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}%
+								\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait@wait{A}}}%
+						\texnim@ifundefined{texnim@currentwait}
+							{}
+							{\expandafter\def\expandafter\texnim@currentwait\expandafter{\romannumeral-`?\expandafter\numadd\expandafter{\texnim@currentwait}{-1}}%
+								\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+								\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+						\immediate\write\@auxout{\string\gdef\string\texnim@turn{\expandafter\@gobble\texnim@turn}}%
+						\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname}}%
+						\texnim@history%
+						\csname texnim@history@\texnim@turn\endcsname\\%
+						$\hbox{You}\,\colon\hbox{Wait.}$\\%
+						\expandafter\ifcompare\expandafter[\texnim@currentwait]=[1]
+							{$\hbox{\TeX}\colon\hbox{OK... }\texnim@currentwait\,\hbox{time left.}$\\\\}
+							{\expandafter\ifcompare\expandafter[\texnim@currentwait]=[0]
+								{$\hbox{\TeX}\colon\hbox{OK... No waits left.}$\\\\}
+								{$\hbox{\TeX}\colon\hbox{OK... }\texnim@currentwait\,\hbox{times left.}$\\\\}}%
+						\expandafter\expandafter\expandafter\texnim@mode@wait@b\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname\texnim@relax%
+						$\hbox{You}\,\colon(\expandafter\expandafter\expandafter\texnim@mode@wait@a\csname texnim@history@\expandafter\@gobble\texnim@turn\endcsname)\,\,\to~\hbox{?}$\\}
+					{\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+						\texnim@ifundefined{texnim@consecutivewait@flag}
+							{}
+							{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait@flag}}%
+								\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait@wait{A}}}%
+						\texnim@ifundefined{texnim@currentwait}
+							{}
+							{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+								\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+						\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+						\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+						\texnim@history%
+						\csname texnim@history@\texnim@turn\endcsname\\%
+						$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\%
+						! Consecutive waits are not allowed.\\%
+						$\hbox{\TeX}\colon\hbox{Input a move.}$\\}}}%
+		\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}}%
 	\endgroup%
 }
 \def\texnim@mode@wait@a#1\texnim@ignore#2\texnim@endignore{#2}
 \def\texnim@mode@wait@b#1\\#2\texnim@relax{#2}
+\def\texnim@mode@test@exists{%
+	\catcode32=10\relax%
+	\texnim@ifundefined{texnim@test@test}
+		{\immediate\write\@auxout{\string\gdef\string\texnim@test@test{AAAAA}}%
+			\par\noindent$\hbox{\TeX}\colon\hbox{Recompile. If the output remains unchanged, the .aux file has been deleted.}$\\}
+		{\par\noindent$\hbox{\TeX}\colon\hbox{Test finished. Let's play!}$\\%
+			$\hbox{\TeX}\colon\hbox{Type a position.}$\\}%
+	\endgroup%
+}
+\def\texnim@mode@history@exists{%
+	\catcode32=10\relax%
+	\texnim@title%
+	\texnim@ifundefined{texnim@history@A}
+		{$\hbox{\TeX}\colon\hbox{No history.}$\\}
+		{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+			\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+			\texnim@ifundefined{texnim@consecutivewait}
+				{}
+				{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait}}}%
+			\texnim@ifundefined{texnim@currentwait}
+				{}
+				{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+			\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+			\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+			\texnim@history\\%
+			\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
+			$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\}%
+	\endgroup%
+}
+\def\texnim@mode@help@exists{%
+	\catcode32=10\relax%
+	\endgroup%
+}
+\def\texnim@option@check{%
+	\texnim@ifundefined{texnim@option@error@flag}
+		{\texnim@ifundefined{texnim@history@A}
+			{}
+			{\texnim@ifundefined{texnim@maxwait@error@flag}
+				{\texnim@ifundefined{texnim@maxwait@exists@flag}
+					{\texnim@ifundefined{texnim@wait}
+						{}
+						{\texnim@maxwait@error\@gobble}}
+					{\texnim@ifundefined{texnim@wait}
+						{\texnim@maxwait@error\@gobble}
+						{\texnim@ifundefined{texnim@consecutivewait@error@flag}
+							{\texnim@ifundefined{texnim@consecutivewait@exists@flag}
+								{\texnim@ifundefined{texnim@consecutivewait}
+									{}
+									{\csname if\texnim@consecutivewait\endcsname\expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi
+										{\texnim@consecutivewait@error\@gobble}
+										{}}}
+								{\texnim@ifundefined{texnim@consecutivewait}
+									{\texnim@consecutivewait@error\@gobble}
+									{\texnim@ifundefined{texnim@random@error@flag}
+										{\texnim@ifundefined{texnim@random@exists@flag}
+											{\texnim@ifundefined{texnim@random}
+												{}
+												{\expandafter\texnim@ifx\expandafter{\texnim@random}{0}
+													{}
+													{\texnim@random@error\texnim@random\@gobble}}}
+											{\texnim@ifundefined{texnim@random}
+												{\expandafter\texnim@ifx\expandafter{\texnim@random@flag}{0}
+													{}
+													{\texnim@random@error0\@gobble}}
+												{}}}
+										{\texnim@random@error\texnim@random\@gobble}}}}
+							{\texnim@consecutivewait@error\@gobble}}}}
+				{\texnim@maxwait@error\@gobble}}}
+		{\@gobble}%
+}
+\def\texnim@option@title@exists#1{%
+	\texnim@ifundefined{texnim@option@title@\string#1@exists}
+		{\texnim@optionerror{3}}
+		{\csname texnim@option@title@\string#1@exists\endcsname}%
+}
+\def\texnim@option@title@true@exists{}
+\def\texnim@option@title@false@exists{\def\texnim@title@flag{N}}
+\def\texnim@option@maxwait@exists#1{%
+	\def\texnim@maxwait@flag{#1}%
+	\texnim@ifundefined{texnim@currentwait}
+		{\ifcompare[0]<=[#1]
+			{\def\texnim@wait{#1}\def\texnim@currentwait{#1}}
+			{\ifcompare[-1]=[#1]
+				{}
+				{\texnim@optionerror{3}}}}
+		{\expandafter\ifcompare\expandafter[\texnim@wait]=[#1]
+			{}
+			{\def\texnim@maxwait@error@flag{Y}}}%
+}
+\def\texnim@maxwait@error{%
+	\texnim@history@show%
+	! Cannot change max wait option during a game.\\%
+	$\hbox{\TeX}\colon\hbox{Back to \texnim@wait.}$%
+}
+\def\texnim@option@consecutivewait@exists#1{%
+	\texnim@ifundefined{texnim@option@consecutivewait@\string#1@exists}
+		{\texnim@optionerror{3}}
+		{\texnim@ifundefined{texnim@consecutivewait}
+			{\edef\texnim@consecutivewait@flag{\string#1}}
+			{\csname if\string#1\endcsname \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
+				{\csname if\texnim@consecutivewait\endcsname \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
+					{\def\texnim@consecutivewait@flag{true}}
+					{\def\texnim@consecutivewait@error@flag{Y}}}
+				{\csname if\texnim@consecutivewait\endcsname \expandafter\@firstoftwo\else\expandafter\@secondoftwo\fi%
+					{\def\texnim@consecutivewait@error@flag{Y}}
+					{\def\texnim@consecutivewait@flag{false}}}}}%
+}
+\def\texnim@option@consecutivewait@true@exists{\def\texnim@consecutivewait@flag{true}}
+\def\texnim@option@consecutivewait@false@exists{\def\texnim@consecutivewait@flag{false}}
+\def\texnim@consecutivewait@error{%
+	\texnim@history@show%
+	! Cannot change consecutive wait option during a game.\\%
+	$\hbox{\TeX}\colon\hbox{Back to \texnim@consecutivewait.}$%
+}
+\def\texnim@option@random@exists#1{%
+	\texnim@ifundefined{texnim@option@random@exists@\string#1}
+		{\texnim@optionerror{3}}
+		{\texnim@ifundefined{texnim@random}
+			{\edef\texnim@random@flag{\string#1}}
+			{\expandafter\texnim@ifx\texnim@random#1%
+				{\def\texnim@random@flag{#1}}
+				{\def\texnim@random@error@flag{Y}}}}%
+}
+\def\texnim@random@error#1{%
+	\texnim@history@show%
+	! Cannot change random option during a game.\\%
+	$\hbox{\TeX}\colon\hbox{Back to #1.}$%
+}
+\expandafter\def\csname texnim@option@random@exists@0\endcsname{A}
+\expandafter\def\csname texnim@option@random@exists@1\endcsname{A}
+\expandafter\def\csname texnim@option@random@exists@2\endcsname{A}
 \def\texnim@check#1{%
 	\expandafter\texnim@check@a\expandafter\texnim@relax\texnim@lastposition,\texnim@relax#1,\texnim@relax%
 }
 \def\texnim@check@a#1\texnim@relax#2,#3\texnim@relax#4,#5\texnim@relax{%
 	\texnim@ifmt{#3#5}
 		{\texnim@ifmt{#4}
-			{\@secondoftwo}
+			{\def\texnim@errorvalue{1}\@secondoftwo}
 			{\ifcompare[#4]>=[0]
 				{\texnim@ifmt{#1}
 					{\ifcompare[#2]>[#4]
 						{\@firstoftwo}
-						{\@secondoftwo}}
+						{\def\texnim@errorvalue{0}\@secondoftwo}}
 					{\ifcompare[#2]=[#4]
 						{\@firstoftwo}
-						{\@secondoftwo}}}
-				{\@secondoftwo}}}
+						{\def\texnim@errorvalue{3}\@secondoftwo}}}
+				{\def\texnim@errorvalue{2}\@secondoftwo}}}
 		{\texnim@ifmt{#3}
-			{\@secondoftwo}
+			{\def\texnim@errorvalue{4}\@secondoftwo}
 			{\texnim@ifmt{#5}
-				{\@secondoftwo}
+				{\def\texnim@errorvalue{4}\@secondoftwo}
 				{\texnim@ifmt{#4}
-					{\@secondoftwo}
+					{\def\texnim@errorvalue{1}\@secondoftwo}
 					{\ifcompare[#4]>=[0]
 						{\texnim@ifmt{#1}
 							{\ifcompare[#2]>=[#4]
 								{\ifcompare[#2]=[#4]
 									{\texnim@check@a\texnim@relax#3\texnim@relax#5\texnim@relax}
 									{\texnim@check@a0\texnim@relax#3\texnim@relax#5\texnim@relax}}
-								{\@secondoftwo}}
+								{\def\texnim@errorvalue{0}\@secondoftwo}}
 							{\ifcompare[#2]=[#4]
 								{\texnim@check@a0\texnim@relax#3\texnim@relax#5\texnim@relax}
-								{\@secondoftwo}}}
-						{\@secondoftwo}}}}}%
+								{\def\texnim@errorvalue{3}\@secondoftwo}}}
+						{\def\texnim@errorvalue{2}\@secondoftwo}}}}}%
 }
-\def\texnim@check@b#1,#2\texnim@relax#3{%
+\def\texnim@check@terminal#1,#2\texnim@relax{%
 	\texnim@ifmt{#2}
 		{\texnim@ifmt{#1}
 			{\@secondoftwo}
-			{\ifcompare[0]#3[#1]
+			{\ifcompare[0]=[#1]
 				{\@firstoftwo}
 				{\@secondoftwo}}}
 		{\texnim@ifmt{#1}
 			{\@secondoftwo}
-			{\ifcompare[0]#3[#1]
-				{\texnim@check@b#2\texnim@relax{#3}}
+			{\ifcompare[0]=[#1]
+				{\texnim@check@terminal#2\texnim@relax}
 				{\@secondoftwo}}}%
 }
-\def\texnim@next#1{%
-	\texnim@next@nim0\texnim@relax\texnim@relax#1,\texnim@relax%
+\def\texnim@check@error#1,#2\texnim@relax{%
+	\texnim@ifmt{#2}
+		{\texnim@ifmt{#1}
+			{\texnim@errortext@numberless\@gobble}
+			{\ifcompare[0]<=[#1]
+				{}
+				{\texnim@errortext@negativenumber\@gobble}}}
+		{\texnim@ifmt{#1}
+			{\texnim@errortext@numberless\@gobble}
+			{\ifcompare[0]<=[#1]
+				{\texnim@check@error#2\texnim@relax}
+				{\texnim@errortext@negativenumber\@gobble}}}%
+}
+\long\def\texnim@next#1{%
+	\texnim@check@terminal#1,\texnim@relax
+		{\texnim@texlose#1,\texnim@relax}
+		{\texnim@next@nim0\texnim@relax\texnim@relax#1,\texnim@relax}%
 }
 \def\texnim@next@nim#1\texnim@relax#2\texnim@relax#3,#4\texnim@relax{%
 	\texnim@ifmt{#4}
@@ -160,22 +485,23 @@
 }
 \def\texnim@texwin@a#1#2#3{%
 	$\hbox{\TeX}\colon (#2#3) \,\, \to~(#2#1)$\\\\%
-	\texnim@check@b#2#1,\texnim@relax{=}
-		{$\hbox{\TeX}\colon\hbox{You lose.}$}
-		{$\hbox{You}\,\colon (#2#1) \,\, \to~\hbox{?}$}%
+	\texnim@check@terminal#2#1,\texnim@relax
+		{$\hbox{\TeX}\colon\hbox{You lose.}$\\}
+		{$\hbox{You}\,\colon (#2#1) \,\, \to~\hbox{?}$\\}%
 	\def\texnim@lastposition{#2#1}%
 	\immediate\write\@auxout{\unexpanded{\gdef\texnim@lastposition{#2#1}}}%
 }
 \def\texnim@texwin@b#1#2#3#4,\texnim@relax{%
 	$\hbox{\TeX}\colon (#2#3,#4) \,\, \to~(#2#1,#4)$\\\\%
-	\texnim@check@b#2#1,#4,\texnim@relax{=}
-		{$\hbox{\TeX}\colon\hbox{You lose.}$}
-		{$\hbox{You}\,\colon (#2#1,#4) \,\, \to~\hbox{?}$}%
+	\texnim@check@terminal#2#1,#4,\texnim@relax
+		{$\hbox{\TeX}\colon\hbox{You lose.}$\\}
+		{$\hbox{You}\,\colon (#2#1,#4) \,\, \to~\hbox{?}$\\}%
 	\def\texnim@lastposition{#2#1,#4}%
 	\immediate\write\@auxout{\unexpanded{\gdef\texnim@lastposition{#2#1,#4}}}%
 }
 \def\texnim@texlose#1,\texnim@relax{%
-	$\hbox{\TeX}\colon (#1) \,\, \to~\hbox{Surrender...}$%
+	$\hbox{\TeX}\colon (#1) \,\, \to~\hbox{Surrender...}$\\%
+	$\hbox{\TeX}\colon\hbox{You win.}$\\%
 }
 \def\texnim@history{%
 	\expandafter\texnim@history@output\texnim@turn\texnim@relax%
@@ -186,30 +512,139 @@
 		{\texnim@history@output#2\texnim@relax\csname texnim@history@#2\endcsname\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\gdef\expandafter\expandafter\expandafter\texnim@history@input\expandafter\expandafter\expandafter{\csname texnim@history@#2\endcsname}{\csname texnim@history@#2\endcsname}}}}%
 }
 \def\texnim@history@input#1#2{#2{#1}}
+\def\texnim@history@record{%
+	\expandafter\texnim@history@record@input\texnim@turn\texnim@relax%
+}
+\def\texnim@history@record@input#1#2\texnim@relax{%
+	\texnim@ifmt{#2}
+		{\immediate\write\@auxout{\unexpanded\expandafter{\expandafter\gdef\expandafter\texnim@history@A\expandafter{\texnim@history@A}}}}
+		{\texnim@history@record@input#2\texnim@relax%
+			\immediate\write\@auxout{\unexpanded\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter{\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\expandafter\gdef\expandafter\expandafter\expandafter\texnim@history@input\expandafter\expandafter\expandafter{\csname texnim@history@#1#2\endcsname}{\csname texnim@history@#1#2\endcsname}}}}%
+}
+\def\texnim@history@show{%
+	\texnim@title%
+	\texnim@ifundefined{texnim@history@A}
+		{}
+		{\immediate\write\@auxout{^^J\@percentchar\space ---------- TeX Nim History ----------}%
+			\immediate\write\@auxout{\string\gdef\string\texnim@turn{\texnim@turn}}%
+			\texnim@ifundefined{texnim@consecutivewait}
+				{}
+				{\immediate\write\@auxout{\string\gdef\string\texnim@consecutivewait{\texnim@consecutivewait}}}%
+			\texnim@ifundefined{texnim@currentwait}
+				{}
+				{\immediate\write\@auxout{\string\gdef\string\texnim@currentwait{\texnim@currentwait}}%
+					\immediate\write\@auxout{\string\gdef\string\texnim@wait{\texnim@wait}}}%
+			\immediate\write\@auxout{\string\gdef\string\texnim@lastposition{\texnim@lastposition}}%
+			\expandafter\def\expandafter\texnim@turn\expandafter{\texnim@turn A}%
+			\texnim@history\\%
+			\immediate\write\@auxout{\@percentchar\space -------------------------------------^^J}%
+			$\hbox{You}\,\colon(\texnim@lastposition)\,\,\to~\hbox{?}$\\}%
+}
 \def\texnim@history@tex#1#2{%
 	$\hbox{\TeX}\colon(#2)\,\,\to~(#1)$\\\texnim@ignore#1\texnim@endignore%
 }
 \def\texnim@history@you#1#2{%
 	$\hbox{You}\,\colon(#1)\,\,\to~#2$\\%
 }
-\def\texnim@errortext{%
+\def\texnim@modeerror{%
+	\texnim@history@show%
+	! Unknown command.\\%
+	$\hbox{\TeX}\colon\hbox{Type \textbackslash help.}$\\%
+}
+\def\texnim@errorvalue{0}
+\def\texnim@errortext#1{%
+	\ifcase#1
+		\expandafter\texnim@errortext@common%
+	\or
+		\expandafter\texnim@errortext@numberless%
+	\or
+		\expandafter\texnim@errortext@negativenumber%
+	\or
+		\expandafter\texnim@errortext@multiplay%
+	\or
+		\expandafter\texnim@errortext@pilechanged%
+	\fi%
+}
+\def\texnim@errortext@common{%
 	 ! Invalid input.\\%
-	$\hbox{\TeX}\colon\hbox{Input again.}$
+	$\hbox{\TeX}\colon\hbox{Input again.}$\\%
+}
+\def\texnim@errortext@numberless{%
+	! Missing pile size.\\%
+	$\hbox{\TeX}\colon\hbox{Input again.}$\\%
+}
+\def\texnim@errortext@negativenumber{%
+	! Negative number detected.\\%
+	$\hbox{\TeX}\colon\hbox{Input again.}$\\%
+}
+\def\texnim@errortext@multiplay{%
+	! Multiple piles changed.\\%
+	$\hbox{\TeX}\colon\hbox{Input again.}$\\%
+}
+\def\texnim@errortext@pilechanged{%
+	! Number of piles changed.\\%
+	$\hbox{\TeX}\colon\hbox{Input again.}$\\%
+}
+\def\texnim@optionerror#1{%
+	\def\texnim@option@error@flag{Y}%
+	\texnim@history@show%
+	\texnim@optionerrortext{#1}%
+}
+\def\texnim@optionerrortext#1{%
+	\ifcase#1
+		\expandafter\texnim@optionerrortext@unknown%
+	\or
+		\expandafter\texnim@optionerrortext@missing%
+	\or
+		\expandafter\texnim@optionerrortext@extracomma%
+	\or
+		\expandafter\texnim@optionerrortext@common%
+	\or
+		\expandafter\texnim@optionerrortext@multioption%
+	\fi%
+}
+\def\texnim@optionerrortext@common{%
+	! Invalid option value.\\%
+	$\hbox{\TeX}\colon\hbox{Type \textbackslash help.}$\\%
+}
+\def\texnim@optionerrortext@missing{%
+	! Missing argument.\\%
+	$\hbox{\TeX}\colon\hbox{Check option.}$\\%
+}
+\def\texnim@optionerrortext@extracomma{%
+	! Extra comma.\\%
+	$\hbox{\TeX}\colon\hbox{Check option.}$\\%
+}
+\def\texnim@optionerrortext@unknown{%
+	! Unknown option.\\%
+	$\hbox{\TeX}\colon\hbox{Type \textbackslash help.}$\\%
+}
+\def\texnim@optionerrortext@multioption{%
+	! Multi option.\\%
+	$\hbox{\TeX}\colon\hbox{Check option.}$\\%
 }
 \def\texnim@relax{\texnim@relax@}
-\def\texnim@ignore#1\texnim@endignore{}
+\long\def\texnim@ignore#1\texnim@endignore{}
+\def\texnim@endignore{}
 \def\texnim@ifmt#1{%
-	\ifx\texnim@relax#1\texnim@relax%
-		\expandafter\@firstoftwo%
+	\ifx\texnim@relax#1\texnim@relax
+		\expandafter\@firstoftwo
 	\else
-		\expandafter\@secondoftwo%
-	\fi%
+		\expandafter\@secondoftwo
+	\fi
 }
 \def\texnim@ifx#1#2{%
 	\ifx#1#2%
-		\expandafter\@firstoftwo%
+		\expandafter\@firstoftwo
 	\else
-		\expandafter\@secondoftwo%
-	\fi%
+		\expandafter\@secondoftwo
+	\fi
 }
-\catcode`\@=12
+\def\texnim@ifundefined#1{%
+	\expandafter\ifx\csname\string#1\endcsname\relax
+		\expandafter\@firstoftwo
+	\else
+		\expandafter\@secondoftwo
+	\fi
+}
+\makeatother
