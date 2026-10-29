@@ -1,4 +1,4 @@
-# NimOnTeX
+# NimGameOnTeX
 
 This project is under active development.
 
